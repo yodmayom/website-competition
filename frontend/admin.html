@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — CompetitionBoard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #fdf6f0;
+      --surface: #fffaf6;
+      --border:  #f0e4d8;
+      --accent1: #f4a8b0;
+      --accent2: #a8c8f4;
+      --text:    #4a3f38;
+      --muted:   #9e8e86;
+      --red:     #e87070;
+      --green:   #6dbf9e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 36px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-family: 'Noto Serif Thai', serif; font-size: 1.1rem; font-weight: 700; }
+    .logo span { color: var(--muted); font-weight: 400; font-size: .85rem; margin-left: 8px; }
+    .btn-back {
+      background: none; border: 1.5px solid var(--border);
+      color: var(--muted); padding: 7px 16px; border-radius: 20px;
+      font-family: 'Sarabun', sans-serif; font-size: .8rem; cursor: pointer;
+      text-decoration: none; transition: all .18s;
+    }
+    .btn-back:hover { border-color: var(--accent1); color: var(--text); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 28px 60px;
+    }
+
+    /* ── LIST PANEL ── */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .panel-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title { font-family: 'Noto Serif Thai', serif; font-size: 1rem; font-weight: 700; }
+    .count { font-size: .78rem; color: var(--muted); }
+
+    .item-list { list-style: none; }
+    .item {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      transition: background .15s;
+    }
+    .item:last-child { border-bottom: none; }
+    .item:hover { background: var(--bg); }
+    .item-name { font-size: .875rem; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+    .item-meta { font-size: .75rem; color: var(--muted); }
+    .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-sm {
+      font-size: .72rem; padding: 4px 10px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      cursor: pointer; font-family: 'Sarabun', sans-serif;
+      color: var(--muted); transition: all .15s;
+    }
+    .btn-sm:hover { color: var(--text); border-color: var(--text); }
+    .btn-sm.danger:hover { color: var(--red); border-color: var(--red); }
+    .btn-sm.toggle-open  { color: var(--green); border-color: #c0e8d8; }
+    .btn-sm.toggle-closed{ color: var(--red);   border-color: #f0c8c8; }
+
+    /* ── FORM PANEL ── */
+    .form-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; position: sticky; top: 24px; height: fit-content; }
+    .form-panel h2 { font-family: 'Noto Serif Thai', serif; font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 14px; }
+    label { font-size: .78rem; color: var(--muted); display: block; margin-bottom: 5px; }
+    input, textarea, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: .875rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color .18s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent1); }
+    textarea { resize: vertical; min-height: 72px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-submit {
+      width: 100%; padding: 12px;
+      background: var(--text); color: #fff;
+      border: none; border-radius: 12px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: .9rem; cursor: pointer;
+      margin-top: 8px; transition: opacity .18s;
+    }
+    .btn-submit:hover { opacity: .8; }
+    .btn-cancel {
+      width: 100%; padding: 10px;
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 12px; color: var(--muted);
+      font-family: 'Sarabun', sans-serif;
+      font-size: .85rem; cursor: pointer; margin-top: 6px;
+    }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--text); color: #fff;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: .85rem; opacity: 0; transition: opacity .3s;
+      z-index: 999; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .empty-admin { padding: 36px; text-align: center; color: var(--muted); font-size: .875rem; }
+
+    /* ── IMAGE UPLOAD ── */
+    .img-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .18s, background .18s;
+      position: relative;
+    }
+    .img-upload-area:hover { border-color: var(--accent1); background: #fdf8f6; }
+    .img-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .img-upload-area .upload-label { font-size: .82rem; color: var(--muted); pointer-events: none; }
+    .img-preview {
+      width: 100%; max-height: 160px; object-fit: cover;
+      border-radius: 8px; margin-top: 10px; display: none;
+    }
+    .img-uploading { font-size: .78rem; color: var(--muted); margin-top: 6px; display: none; }
+
+    /* ── LOGIN MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(74,63,56,.35); z-index: 200;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--surface); border-radius: 20px;
+      width: 100%; max-width: 360px; padding: 32px;
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-box h3 { font-family: 'Noto Serif Thai', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .modal-box p  { font-size: .82rem; color: var(--muted); margin-bottom: 20px; }
+    .modal-box label { font-size: .78rem; color: var(--muted); display: block; margin-bottom: 5px; margin-top: 12px; }
+    .modal-box input {
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 12px;
+      font-family: 'Sarabun', sans-serif; font-size: .875rem; color: var(--text);
+      outline: none; transition: border-color .18s;
+    }
+    .modal-box input:focus { border-color: var(--accent1); }
+    .modal-error { color: #c05050; font-size: .78rem; margin-top: 8px; min-height: 18px; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+    .btn-confirm {
+      flex: 1; background: var(--text); color: #fff; border: none;
+      border-radius: 10px; padding: 11px; font-family: 'Sarabun', sans-serif;
+      font-size: .875rem; cursor: pointer; transition: opacity .18s;
+    }
+    .btn-confirm:hover { opacity: .8; }
+    .btn-confirm:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-cancel-modal {
+      flex: 1; background: none; border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px; font-family: 'Sarabun', sans-serif;
+      font-size: .875rem; color: var(--muted); cursor: pointer;
+    }
+    #adminContent { display: none; }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-name { font-size: .82rem; color: var(--muted); }
+    .btn-logout {
+      background: none; border: 1.5px solid var(--border);
+      color: var(--muted); padding: 7px 16px; border-radius: 20px;
+      font-family: 'Sarabun', sans-serif; font-size: .8rem; cursor: pointer;
+      transition: all .18s;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN CONFIRM MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-box">
+    <div style="font-size:1.5rem;margin-bottom:12px">🔐</div>
+    <h3>ยืนยันตัวตน</h3>
+    <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+    <label>ชื่อผู้ใช้</label>
+    <input type="text" id="m-username" placeholder="username" autocomplete="username" />
+    <label>รหัสผ่าน</label>
+    <input type="password" id="m-password" placeholder="password" autocomplete="current-password" />
+    <div class="modal-error" id="m-error"></div>
+    <div class="modal-btns">
+      <a href="/" class="btn-cancel-modal" style="text-align:center;text-decoration:none">← กลับหน้าหลัก</a>
+      <button class="btn-confirm" id="m-confirmBtn" onclick="confirmAuth()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<div id="adminContent">
+<header>
+  <div class="logo">CompetitionBoard <span>Admin Panel</span></div>
+  <div class="user-info">
+    <span class="user-name" id="userDisplayName"></span>
+    <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+    <a href="/" class="btn-back">← หน้าหลัก</a>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LIST -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">รายการแข่งขันทั้งหมด</span>
+      <span class="count" id="countLabel">0 รายการ</span>
+    </div>
+    <ul class="item-list" id="itemList">
+      <li class="empty-admin">กำลังโหลด…</li>
+    </ul>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-panel">
+    <h2 id="formTitle">➕ เพิ่มรายการใหม่</h2>
+    <input type="hidden" id="editId" />
+
+    <div class="form-group">
+      <label>ชื่อรายการแข่งขัน *</label>
+      <input type="text" id="f-name" placeholder="เช่น Thailand Science Fair 2025" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ระดับการแข่งขัน</label>
+        <select id="f-level">
+          <option>ระดับโรงเรียน</option>
+          <option>ระดับจังหวัด</option>
+          <option>ระดับภูมิภาค</option>
+          <option>ระดับประเทศ</option>
+          <option>ระดับนานาชาติ</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>สถานะ</label>
+        <select id="f-isOpen">
+          <option value="true">เปิดรับสมัคร</option>
+          <option value="false">ปิดแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>วันเปิดรับสมัคร</label>
+        <input type="date" id="f-startDate" />
+      </div>
+      <div class="form-group">
+        <label>Deadline *</label>
+        <input type="date" id="f-deadline" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>รายละเอียด</label>
+      <textarea id="f-description" placeholder="อธิบายรายการแข่งขัน…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>เงื่อนไขการสมัคร</label>
+      <textarea id="f-conditions" placeholder="เช่น ทีมละ 1-3 คน, ระดับ ม.ปลาย…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>รางวัล (แต่ละบรรทัด = รางวัลหนึ่ง)</label>
+      <textarea id="f-prize" placeholder="รางวัลที่ 1: ทุน 50,000 บาท&#10;รางวัลที่ 2: ทุน 30,000 บาท"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Tags (คั่นด้วย ,)</label>
+      <input type="text" id="f-tags" placeholder="วิทยาศาสตร์, นวัตกรรม, ม.ปลาย" />
+    </div>
+    <div class="form-group">
+      <label>ลิงก์สมัคร</label>
+      <input type="url" id="f-registerUrl" placeholder="https://" />
+    </div>
+    <div class="form-group">
+      <label>เว็บไซต์</label>
+      <input type="url" id="f-website" placeholder="https://" />
+    </div>
+    <div class="form-group">
+      <label>รูปภาพโครงงาน</label>
+      <div class="img-upload-area" id="uploadArea">
+        <input type="file" id="f-image" accept="image/*" onchange="handleImageUpload(this)" />
+        <div class="upload-label" id="uploadLabel">📷 คลิกหรือลากรูปมาวางที่นี่<br><small>PNG, JPG, WEBP ขนาดไม่เกิน 5MB</small></div>
+        <div class="img-uploading" id="imgUploading">⏳ กำลังอัปโหลด...</div>
+      </div>
+      <img id="imgPreview" class="img-preview" alt="preview" />
+      <input type="hidden" id="f-imageUrl" />
+    </div>
+    <button class="btn-submit" onclick="submitForm()">บันทึก</button>
+    <button class="btn-cancel" id="cancelBtn" style="display:none" onclick="resetForm()">ยกเลิกการแก้ไข</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/api';
+  let allData = [];
+  let sessionToken = null;   // token หลัง verify สำเร็จ (ใช้ตลอด session)
+  let pendingAction = null;  // ฟังก์ชันที่รอ auth อยู่
+
+  // ─── IMAGE UPLOAD ─────────────────────────────────────────────────────────
+  async function handleImageUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    if (!sessionToken) {
+      requireAuth(() => handleImageUpload(input));
+      return;
+    }
+    const file = input.files[0];
+    document.getElementById('imgUploading').style.display = 'block';
+    document.getElementById('uploadLabel').style.display = 'none';
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await fetch(`${API}/upload-image`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${sessionToken}` },
+        body: formData
+      });
+      if (res.status === 401) { sessionToken = null; showToast('❌ Session หมดอายุ'); return; }
+      const json = await res.json();
+      if (json.success) {
+        document.getElementById('f-imageUrl').value = json.imageUrl;
+        const preview = document.getElementById('imgPreview');
+        preview.src = json.imageUrl;
+        preview.style.display = 'block';
+        showToast('✅ อัปโหลดรูปสำเร็จ');
+      } else { showToast('❌ อัปโหลดไม่สำเร็จ'); }
+    } catch { showToast('❌ เกิดข้อผิดพลาดในการอัปโหลด'); }
+    finally {
+      document.getElementById('imgUploading').style.display = 'none';
+      document.getElementById('uploadLabel').style.display = 'block';
+    }
+  }
+
+  // ─── AUTH MODAL ───────────────────────────────────────────────────────────
+  function showLoginModal() {
+    document.getElementById('m-username').value = '';
+    document.getElementById('m-password').value = '';
+    document.getElementById('m-error').textContent = '';
+    document.getElementById('authModal').classList.add('show');
+    setTimeout(() => document.getElementById('m-username').focus(), 100);
+  }
+
+  function requireAuth(action) {
+    if (sessionToken) { action(); return; }
+    pendingAction = action;
+    showLoginModal();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('authModal').classList.contains('show')) confirmAuth();
+  });
+
+  async function confirmAuth() {
+    const username = document.getElementById('m-username').value.trim();
+    const password = document.getElementById('m-password').value;
+    const btn = document.getElementById('m-confirmBtn');
+    const errEl = document.getElementById('m-error');
+    if (!username || !password) { errEl.textContent = 'กรุณากรอกให้ครบ'; return; }
+
+    btn.disabled = true; btn.textContent = 'กำลังตรวจสอบ…';
+    try {
+      const res = await fetch(`${API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const json = await res.json();
+      if (json.success) {
+        sessionToken = json.token;
+        closeAuthModal();
+        if (pendingAction) { pendingAction(); pendingAction = null; }
+      } else {
+        errEl.textContent = json.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+      }
+    } catch { errEl.textContent = 'ไม่สามารถเชื่อมต่อได้'; }
+    finally { btn.disabled = false; btn.textContent = 'ยืนยัน'; }
+  }
+
+  function closeAuthModal() {
+    if (!sessionToken) return; // ถ้ายังไม่ได้ login ปิดไม่ได้
+    document.getElementById('authModal').classList.remove('show');
+    pendingAction = null;
+  }
+
+  async function logout() {
+    try { await fetch(`${API}/logout`, { method: 'POST', headers: authHeaders() }); } catch {}
+    sessionToken = null;
+    document.getElementById('adminContent').style.display = 'none';
+    showLoginModal();
+  }
+
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` };
+  }
+
+  // ─── DATA ─────────────────────────────────────────────────────────────────
+  async function fetchData() {
+    try {
+      const res = await fetch(`${API}/competitions`);
+      const json = await res.json();
+      allData = json.data;
+      renderList();
+    } catch {
+      document.getElementById('itemList').innerHTML = '<li class="empty-admin">ไม่สามารถเชื่อมต่อ backend ได้</li>';
+    }
+  }
+
+  function renderList() {
+    document.getElementById('countLabel').textContent = allData.length + ' รายการ';
+    const ul = document.getElementById('itemList');
+    if (!allData.length) { ul.innerHTML = '<li class="empty-admin">ยังไม่มีรายการ กรอกฟอร์มเพื่อเพิ่มเลย!</li>'; return; }
+    ul.innerHTML = allData.map(c => `
+      <li class="item">
+        <div>
+          <div class="item-name">${c.name}</div>
+          <div class="item-meta">${c.level} · หมดเขต ${new Date(c.deadline).toLocaleDateString('th-TH')}${new Date(c.deadline) < new Date() ? ' <span style="color:#c05050;font-weight:600">(หมดเขตแล้ว)</span>' : ''}</div>
+        </div>
+        <div class="item-actions">
+          ${new Date(c.deadline) < new Date()
+            ? '<button class="btn-sm" style="color:#c05050;border-color:#f0c8c8;cursor:default" disabled>หมดเขต</button>'
+            : `<button class="btn-sm \${c.isOpen ? 'toggle-open' : 'toggle-closed'}" onclick="toggle(\${c.id})">\${c.isOpen ? 'เปิด' : 'ปิด'}</button>`
+          }
+          <button class="btn-sm" onclick="editItem(${c.id})">แก้ไข</button>
+          <button class="btn-sm danger" onclick="deleteItem(${c.id})">ลบ</button>
+        </div>
+      </li>`).join('');
+  }
+
+  async function submitForm() {
+    const id = document.getElementById('editId').value;
+    const payload = {
+      name:        document.getElementById('f-name').value.trim(),
+      level:       document.getElementById('f-level').value,
+      isOpen:      document.getElementById('f-isOpen').value === 'true',
+      startDate:   document.getElementById('f-startDate').value,
+      deadline:    document.getElementById('f-deadline').value,
+      description: document.getElementById('f-description').value.trim(),
+      conditions:  document.getElementById('f-conditions').value.trim(),
+      prize:       document.getElementById('f-prize').value.trim(),
+      tags:        document.getElementById('f-tags').value.split(',').map(s => s.trim()).filter(Boolean),
+      registerUrl: document.getElementById('f-registerUrl').value.trim(),
+      website:     document.getElementById('f-website').value.trim(),
+      imageUrl:    document.getElementById('f-imageUrl').value.trim(),
+    };
+    if (!payload.name || !payload.deadline) { showToast('⚠️ กรุณากรอกชื่อและวันหมดเขต'); return; }
+    requireAuth(async () => {
+      try {
+        const method = id ? 'PUT' : 'POST';
+        const url    = id ? `${API}/competitions/${id}` : `${API}/competitions`;
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
+        if (res.status === 401) { sessionToken = null; showToast('❌ Session หมดอายุ กรุณา login ใหม่'); return; }
+        showToast(id ? '✅ แก้ไขสำเร็จ' : '✅ เพิ่มรายการสำเร็จ');
+        resetForm(); fetchData();
+      } catch { showToast('❌ เกิดข้อผิดพลาด'); }
+    });
+  }
+
+  function editItem(id) {
+    const c = allData.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('editId').value = c.id;
+    document.getElementById('f-name').value = c.name;
+    document.getElementById('f-level').value = c.level;
+    document.getElementById('f-isOpen').value = c.isOpen ? 'true' : 'false';
+    document.getElementById('f-startDate').value = c.startDate || '';
+    document.getElementById('f-deadline').value = c.deadline;
+    document.getElementById('f-description').value = c.description;
+    document.getElementById('f-conditions').value = c.conditions;
+    document.getElementById('f-prize').value = c.prize;
+    document.getElementById('f-tags').value = (c.tags||[]).join(', ');
+    document.getElementById('f-registerUrl').value = c.registerUrl;
+    document.getElementById('f-website').value = c.website;
+    document.getElementById('f-imageUrl').value = c.imageUrl || '';
+    const preview = document.getElementById('imgPreview');
+    if (c.imageUrl) { preview.src = c.imageUrl; preview.style.display = 'block'; }
+    else { preview.src = ''; preview.style.display = 'none'; }
+    document.getElementById('formTitle').textContent = '✏️ แก้ไขรายการ';
+    document.getElementById('cancelBtn').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('ยืนยันการลบรายการนี้?')) return;
+    requireAuth(async () => {
+      const res = await fetch(`${API}/competitions/${id}`, { method: 'DELETE', headers: authHeaders() });
+      if (res.status === 401) { sessionToken = null; showToast('❌ Session หมดอายุ'); return; }
+      showToast('🗑️ ลบรายการแล้ว'); fetchData();
+    });
+  }
+
+  async function toggle(id) {
+    requireAuth(async () => {
+      const res = await fetch(`${API}/competitions/${id}/toggle`, { method: 'PATCH', headers: authHeaders() });
+      if (res.status === 401) { sessionToken = null; showToast('❌ Session หมดอายุ'); return; }
+      fetchData();
+    });
+  }
+
+  function resetForm() {
+    document.getElementById('editId').value = '';
+    ['f-name','f-startDate','f-deadline','f-description','f-conditions','f-prize','f-tags','f-registerUrl','f-website','f-imageUrl'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-level').value = 'ระดับโรงเรียน';
+    document.getElementById('f-isOpen').value = 'true';
+    const preview = document.getElementById('imgPreview');
+    preview.src = ''; preview.style.display = 'none';
+    document.getElementById('formTitle').textContent = '➕ เพิ่มรายการใหม่';
+    document.getElementById('cancelBtn').style.display = 'none';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ถ้ามี token จาก index.html (login ผ่าน modal แล้ว redirect มา)
+  const savedToken = sessionStorage.getItem('adminToken');
+  const savedName  = sessionStorage.getItem('adminDisplayName');
+  if (savedToken) {
+    sessionToken = savedToken;
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminDisplayName');
+    document.getElementById('userDisplayName').textContent = '👤 ' + (savedName || '');
+    document.getElementById('adminContent').style.display = 'block';
+    fetchData();
+  } else {
+    // ไม่มี token → แสดง login modal
+    showLoginModal();
+  }
+</script>
+</div><!-- #adminContent -->
+</body>
+</html>
