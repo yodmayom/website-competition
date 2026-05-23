@@ -124,27 +124,6 @@
     .toast.show { opacity: 1; }
     .empty-admin { padding: 36px; text-align: center; color: var(--muted); font-size: .875rem; }
 
-    /* ── IMAGE UPLOAD ── */
-    .img-upload-area {
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .18s, background .18s;
-      position: relative;
-    }
-    .img-upload-area:hover { border-color: var(--accent1); background: #fdf8f6; }
-    .img-upload-area input[type=file] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-    }
-    .img-upload-area .upload-label { font-size: .82rem; color: var(--muted); pointer-events: none; }
-    .img-preview {
-      width: 100%; max-height: 160px; object-fit: cover;
-      border-radius: 8px; margin-top: 10px; display: none;
-    }
-    .img-uploading { font-size: .78rem; color: var(--muted); margin-top: 6px; display: none; }
-
     /* ── LOGIN MODAL ── */
     .modal-overlay {
       display: none; position: fixed; inset: 0;
@@ -298,16 +277,6 @@
       <label>เว็บไซต์</label>
       <input type="url" id="f-website" placeholder="https://" />
     </div>
-    <div class="form-group">
-      <label>รูปภาพโครงงาน</label>
-      <div class="img-upload-area" id="uploadArea">
-        <input type="file" id="f-image" accept="image/*" onchange="handleImageUpload(this)" />
-        <div class="upload-label" id="uploadLabel">📷 คลิกหรือลากรูปมาวางที่นี่<br><small>PNG, JPG, WEBP ขนาดไม่เกิน 5MB</small></div>
-        <div class="img-uploading" id="imgUploading">⏳ กำลังอัปโหลด...</div>
-      </div>
-      <img id="imgPreview" class="img-preview" alt="preview" />
-      <input type="hidden" id="f-imageUrl" />
-    </div>
     <button class="btn-submit" onclick="submitForm()">บันทึก</button>
     <button class="btn-cancel" id="cancelBtn" style="display:none" onclick="resetForm()">ยกเลิกการแก้ไข</button>
   </div>
@@ -320,40 +289,6 @@
   let allData = [];
   let sessionToken = null;   // token หลัง verify สำเร็จ (ใช้ตลอด session)
   let pendingAction = null;  // ฟังก์ชันที่รอ auth อยู่
-
-  // ─── IMAGE UPLOAD ─────────────────────────────────────────────────────────
-  async function handleImageUpload(input) {
-    if (!input.files || !input.files[0]) return;
-    if (!sessionToken) {
-      requireAuth(() => handleImageUpload(input));
-      return;
-    }
-    const file = input.files[0];
-    document.getElementById('imgUploading').style.display = 'block';
-    document.getElementById('uploadLabel').style.display = 'none';
-    const formData = new FormData();
-    formData.append('image', file);
-    try {
-      const res = await fetch(`${API}/upload-image`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${sessionToken}` },
-        body: formData
-      });
-      if (res.status === 401) { sessionToken = null; showToast('❌ Session หมดอายุ'); return; }
-      const json = await res.json();
-      if (json.success) {
-        document.getElementById('f-imageUrl').value = json.imageUrl;
-        const preview = document.getElementById('imgPreview');
-        preview.src = json.imageUrl;
-        preview.style.display = 'block';
-        showToast('✅ อัปโหลดรูปสำเร็จ');
-      } else { showToast('❌ อัปโหลดไม่สำเร็จ'); }
-    } catch { showToast('❌ เกิดข้อผิดพลาดในการอัปโหลด'); }
-    finally {
-      document.getElementById('imgUploading').style.display = 'none';
-      document.getElementById('uploadLabel').style.display = 'block';
-    }
-  }
 
   // ─── AUTH MODAL ───────────────────────────────────────────────────────────
   function showLoginModal() {
@@ -442,10 +377,10 @@
         <div class="item-actions">
           ${new Date(c.deadline) < new Date()
             ? '<button class="btn-sm" style="color:#c05050;border-color:#f0c8c8;cursor:default" disabled>หมดเขต</button>'
-            : `<button class="btn-sm \${c.isOpen ? 'toggle-open' : 'toggle-closed'}" onclick="toggle(\${c.id})">\${c.isOpen ? 'เปิด' : 'ปิด'}</button>`
+            : `<button class="btn-sm \${c.isOpen ? 'toggle-open' : 'toggle-closed'}" onclick="toggle('\${c._id}')">\${c.isOpen ? 'เปิด' : 'ปิด'}</button>`
           }
-          <button class="btn-sm" onclick="editItem(${c.id})">แก้ไข</button>
-          <button class="btn-sm danger" onclick="deleteItem(${c.id})">ลบ</button>
+          <button class="btn-sm" onclick="editItem('${c._id}')">แก้ไข</button>
+          <button class="btn-sm danger" onclick="deleteItem('${c._id}')">ลบ</button>
         </div>
       </li>`).join('');
   }
@@ -464,7 +399,6 @@
       tags:        document.getElementById('f-tags').value.split(',').map(s => s.trim()).filter(Boolean),
       registerUrl: document.getElementById('f-registerUrl').value.trim(),
       website:     document.getElementById('f-website').value.trim(),
-      imageUrl:    document.getElementById('f-imageUrl').value.trim(),
     };
     if (!payload.name || !payload.deadline) { showToast('⚠️ กรุณากรอกชื่อและวันหมดเขต'); return; }
     requireAuth(async () => {
@@ -480,9 +414,9 @@
   }
 
   function editItem(id) {
-    const c = allData.find(x => x.id === id);
+    const c = allData.find(x => x._id === id);
     if (!c) return;
-    document.getElementById('editId').value = c.id;
+    document.getElementById('editId').value = c._id;
     document.getElementById('f-name').value = c.name;
     document.getElementById('f-level').value = c.level;
     document.getElementById('f-isOpen').value = c.isOpen ? 'true' : 'false';
@@ -494,10 +428,6 @@
     document.getElementById('f-tags').value = (c.tags||[]).join(', ');
     document.getElementById('f-registerUrl').value = c.registerUrl;
     document.getElementById('f-website').value = c.website;
-    document.getElementById('f-imageUrl').value = c.imageUrl || '';
-    const preview = document.getElementById('imgPreview');
-    if (c.imageUrl) { preview.src = c.imageUrl; preview.style.display = 'block'; }
-    else { preview.src = ''; preview.style.display = 'none'; }
     document.getElementById('formTitle').textContent = '✏️ แก้ไขรายการ';
     document.getElementById('cancelBtn').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -522,11 +452,9 @@
 
   function resetForm() {
     document.getElementById('editId').value = '';
-    ['f-name','f-startDate','f-deadline','f-description','f-conditions','f-prize','f-tags','f-registerUrl','f-website','f-imageUrl'].forEach(id => document.getElementById(id).value = '');
+    ['f-name','f-startDate','f-deadline','f-description','f-conditions','f-prize','f-tags','f-registerUrl','f-website'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-level').value = 'ระดับโรงเรียน';
     document.getElementById('f-isOpen').value = 'true';
-    const preview = document.getElementById('imgPreview');
-    preview.src = ''; preview.style.display = 'none';
     document.getElementById('formTitle').textContent = '➕ เพิ่มรายการใหม่';
     document.getElementById('cancelBtn').style.display = 'none';
   }
