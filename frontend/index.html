@@ -558,7 +558,7 @@
             <div class="card-footer">
               <span class="prize-snippet">${firstPrizeLine ? '🏆 ' + firstPrizeLine : ''}</span>
               <div style="display:flex;gap:8px">
-                <button class="btn-detail" onclick="openModal(${c.id})">ดูรายละเอียด</button>
+                <button class="btn-detail" onclick="openModal('${c._id}')">ดูรายละเอียด</button>
                 ${regBtn}
               </div>
             </div>
@@ -567,7 +567,7 @@
     }
 
     function openModal(id) {
-      const c = allData.find(x => x.id === id);
+      const c = allData.find(x => x._id === id);
       if (!c) return;
       const imgHtml = c.imageUrl ? '<img src="' + c.imageUrl + '" class="modal-img" alt="' + c.name + '" onclick="openLightbox(this)" />' : '';
       const badge        = c.isOpen    ? 'badge-open' : 'badge-closed';
