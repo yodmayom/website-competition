@@ -45,6 +45,22 @@
       padding: 0 28px 60px;
     }
 
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+        padding: 0 16px 60px;
+        margin: 16px auto;
+      }
+      /* แสดง list ก่อน form */
+      .layout { display: flex; flex-direction: column; }
+      .panel { order: 1; }
+      .form-panel { order: 2; position: static; }
+      header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+      .form-row { grid-template-columns: 1fr; }
+      .item { flex-wrap: wrap; }
+      .item-actions { flex-wrap: wrap; gap: 4px; }
+    }
+
     /* ── LIST PANEL ── */
     .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
     .panel-header {
